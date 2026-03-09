@@ -1,4 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+} from 'typeorm';
+
+export interface OrderLineItem {
+  itemId: string;
+  type: 'menu' | 'service';
+  quantity: number;
+  name?: string;
+  price?: number;
+}
 
 export enum OrderStatus {
   PENDING = 'Pending',
@@ -19,7 +32,7 @@ export class Order {
   vendorId: string;
 
   @Column('json')
-  items: { menuItemId: string; quantity: number; name?: string; price?: number }[];
+  items: OrderLineItem[];
 
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;

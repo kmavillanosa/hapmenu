@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { VendorsService } from './vendors.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -33,28 +42,5 @@ export class VendorsController {
   @UseGuards(JwtAuthGuard)
   remove(@Param('id') id: string) {
     return this.vendorsService.remove(id);
-  }
-
-  @Get('vendors/:vendorId/menu')
-  getMenu(@Param('vendorId') vendorId: string) {
-    return this.vendorsService.getMenu(vendorId);
-  }
-
-  @Post('menu-items')
-  @UseGuards(JwtAuthGuard)
-  createMenuItem(@Body() body: any) {
-    return this.vendorsService.createMenuItem(body);
-  }
-
-  @Put('menu-items/:id')
-  @UseGuards(JwtAuthGuard)
-  updateMenuItem(@Param('id') id: string, @Body() body: any) {
-    return this.vendorsService.updateMenuItem(id, body);
-  }
-
-  @Delete('menu-items/:id')
-  @UseGuards(JwtAuthGuard)
-  removeMenuItem(@Param('id') id: string) {
-    return this.vendorsService.removeMenuItem(id);
   }
 }

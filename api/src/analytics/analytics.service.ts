@@ -8,7 +8,10 @@ export class AnalyticsService {
   async getRevenue() {
     const orders = await this.ordersService.findAll();
     const total = orders.reduce((sum, order) => {
-      const orderTotal = order.items.reduce((s, item) => s + (item.price || 0) * item.quantity, 0);
+      const orderTotal = order.items.reduce(
+        (s, item) => s + (item.price || 0) * item.quantity,
+        0,
+      );
       return sum + orderTotal;
     }, 0);
     return { total, orderCount: orders.length };
@@ -16,13 +19,25 @@ export class AnalyticsService {
 
   async getPopularItems() {
     const orders = await this.ordersService.findAll();
-    const counts: Record<string, { menuItemId: string; name: string; count: number }> = {};
+    const counts: Record<
+      string,
+      { itemId: string; type: 'menu' | 'service'; name: string; count: number }
+    > = {};
     orders.forEach((order) => {
       order.items.forEach((item) => {
-        if (!counts[item.menuItemId]) {
-          counts[item.menuItemId] = { menuItemId: item.menuItemId, name: item.name || '', count: 0 };
+        const key = `${item.type}:${item.itemId}`;
+        if (!counts[key]) {
+          counts[key] = {
+            itemId: item.itemId,
+            type: item.type,
+            name: item.name || '',
+            count: 0,
+          };
         }
-        counts[item.menuItemId].count += item.quantity;
+        counts[key].count += item.quantity;
+        if (!counts[key].name && item.name) {
+          counts[key].name = item.name;
+        }
       });
     });
     return Object.values(counts).sort((a, b) => b.count - a.count);

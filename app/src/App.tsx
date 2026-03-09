@@ -7,12 +7,19 @@ import LoginPage from './pages/LoginPage'
 function App() {
   const hostname = window.location.hostname
   const parts = hostname.split('.')
-  const isSubdomain = parts.length >= 3 && parts[0] !== 'www'
-  
+  const subdomain = parts[0]
+  const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname)
+  const isSubdomain =
+    !isIpAddress &&
+    hostname !== 'localhost' &&
+    parts.length >= 2 &&
+    subdomain !== 'www' &&
+    subdomain !== 'hapmenu'
+
   if (isSubdomain) {
     return (
       <Routes>
-        <Route path="*" element={<CustomerPage subdomain={parts[0]} />} />
+        <Route path="*" element={<CustomerPage subdomain={subdomain} />} />
       </Routes>
     )
   }

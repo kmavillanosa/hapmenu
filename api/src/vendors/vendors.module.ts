@@ -3,10 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { VendorsService } from './vendors.service';
 import { VendorsController } from './vendors.controller';
 import { Vendor } from './vendor.entity';
-import { MenuItem } from './menu-item.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Vendor, MenuItem])],
+  imports: [TypeOrmModule.forFeature([Vendor])],
   providers: [VendorsService],
   controllers: [VendorsController],
   exports: [VendorsService],

@@ -2,19 +2,51 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Vendor } from './vendor.entity';
-import { MenuItem } from './menu-item.entity';
 
 @Injectable()
 export class VendorsService {
   constructor(
     @InjectRepository(Vendor)
-    private vendorsRepo: Repository<Vendor>,
-    @InjectRepository(MenuItem)
-    private menuItemsRepo: Repository<MenuItem>,
+    private readonly vendorsRepo: Repository<Vendor>,
   ) {}
 
-  generateSubdomain(name: string): string {
-    return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  private normalizeSubdomain(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
+  private async subdomainExists(
+    subdomain: string,
+    excludeId?: string,
+  ): Promise<boolean> {
+    const existing = await this.vendorsRepo.findOne({ where: { subdomain } });
+    if (!existing) {
+      return false;
+    }
+    if (!excludeId) {
+      return true;
+    }
+    return existing.id !== excludeId;
+  }
+
+  private async generateUniqueSubdomain(
+    seed: string,
+    excludeId?: string,
+  ): Promise<string> {
+    const base = this.normalizeSubdomain(seed) || 'vendor';
+    let candidate = base;
+    let suffix = 1;
+
+    while (await this.subdomainExists(candidate, excludeId)) {
+      candidate = `${base}-${suffix}`;
+      suffix += 1;
+    }
+
+    return candidate;
   }
 
   async findAll(): Promise<Vendor[]> {
@@ -34,39 +66,23 @@ export class VendorsService {
   }
 
   async create(data: Partial<Vendor>): Promise<Vendor> {
-    if (!data.subdomain && data.name) {
-      data.subdomain = this.generateSubdomain(data.name);
-    }
+    const seed = data.subdomain || data.name || 'vendor';
+    data.subdomain = await this.generateUniqueSubdomain(seed);
     const vendor = this.vendorsRepo.create(data);
     return this.vendorsRepo.save(vendor);
   }
 
   async update(id: string, data: Partial<Vendor>): Promise<Vendor> {
+    const existing = await this.findById(id);
+    if (data.subdomain || data.name) {
+      const seed = data.subdomain || data.name || existing.subdomain;
+      data.subdomain = await this.generateUniqueSubdomain(seed, id);
+    }
     await this.vendorsRepo.update(id, data);
     return this.findById(id);
   }
 
   async remove(id: string): Promise<void> {
     await this.vendorsRepo.delete(id);
-  }
-
-  async getMenu(vendorId: string): Promise<MenuItem[]> {
-    return this.menuItemsRepo.find({ where: { vendorId } });
-  }
-
-  async createMenuItem(data: Partial<MenuItem>): Promise<MenuItem> {
-    const item = this.menuItemsRepo.create(data);
-    return this.menuItemsRepo.save(item);
-  }
-
-  async updateMenuItem(id: string, data: Partial<MenuItem>): Promise<MenuItem> {
-    await this.menuItemsRepo.update(id, data);
-    const item = await this.menuItemsRepo.findOne({ where: { id } });
-    if (!item) throw new NotFoundException('Menu item not found');
-    return item;
-  }
-
-  async removeMenuItem(id: string): Promise<void> {
-    await this.menuItemsRepo.delete(id);
   }
 }

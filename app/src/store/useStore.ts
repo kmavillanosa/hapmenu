@@ -1,72 +1,111 @@
 import { create } from 'zustand'
 
-export interface CartItem {
-  menuItemId: string
-  quantity: number
-  name: string
-  price: number
-}
-
-export interface MenuItemData {
+export interface User {
   id: string
   name: string
-  description: string
+  role: 'ADMIN' | 'VENDOR' | 'CUSTOMER'
+  token: string
+}
+
+export interface MenuItem {
+  id: string
+  name: string
   price: number
   available: boolean
-  vendorId: string
+  description?: string
+  vendorId?: string
+}
+
+export interface ServiceItem {
+  id: string
+  name: string
+  price: number
+  duration?: number
+  available: boolean
+  description?: string
+  vendorId?: string
+}
+
+export interface OrderItem {
+  itemId: string
+  type: 'menu' | 'service'
+  quantity: number
+  name?: string
+  price?: number
 }
 
 export interface OrderData {
   id: string
   customerId: string
   vendorId: string
-  items: CartItem[]
+  items: OrderItem[]
   status: string
   createdAt: string
 }
 
-export interface UserInfo {
-  id: string
-  name: string
-  email: string
-  role: 'ADMIN' | 'VENDOR' | 'CUSTOMER'
-}
-
-interface AppState {
-  user: UserInfo | null
-  token: string | null
-  cart: CartItem[]
-  vendorMenu: MenuItemData[]
-  orders: OrderData[]
-  setUser: (user: UserInfo | null) => void
-  setToken: (token: string | null) => void
-  addToCart: (item: CartItem) => void
-  removeFromCart: (menuItemId: string) => void
+interface Store {
+  user: User | null
+  setUser: (user: User | null) => void
+  cart: OrderItem[]
+  addToCart: (item: OrderItem) => void
+  removeFromCart: (itemId: string, type: 'menu' | 'service') => void
   clearCart: () => void
-  setVendorMenu: (menu: MenuItemData[]) => void
+  vendorMenu: MenuItem[]
+  setVendorMenu: (menu: MenuItem[]) => void
+  vendorServices: ServiceItem[]
+  setVendorServices: (services: ServiceItem[]) => void
+  orders: OrderData[]
   setOrders: (orders: OrderData[]) => void
   logout: () => void
 }
 
-export const useStore = create<AppState>((set) => ({
-  user: null,
-  token: localStorage.getItem('token'),
+const getStoredUser = (): User | null => {
+  const rawUser = localStorage.getItem('user')
+  const token = localStorage.getItem('token')
+  if (!rawUser || !token) {
+    return null
+  }
+
+  try {
+    const parsed = JSON.parse(rawUser) as Omit<User, 'token'>
+    return { ...parsed, token }
+  } catch {
+    localStorage.removeItem('user')
+    localStorage.removeItem('token')
+    return null
+  }
+}
+
+export const useStore = create<Store>((set) => ({
+  user: getStoredUser(),
   cart: [],
   vendorMenu: [],
+  vendorServices: [],
   orders: [],
-  setUser: (user) => set({ user }),
-  setToken: (token) => {
-    if (token) localStorage.setItem('token', token)
-    else localStorage.removeItem('token')
-    set({ token })
+  setUser: (user) => {
+    if (user) {
+      localStorage.setItem('token', user.token)
+      localStorage.setItem(
+        'user',
+        JSON.stringify({
+          id: user.id,
+          name: user.name,
+          role: user.role,
+        }),
+      )
+    } else {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+    }
+    set({ user })
   },
   addToCart: (item) =>
     set((state) => {
-      const existing = state.cart.find((c) => c.menuItemId === item.menuItemId)
+      const existing = state.cart.find((c) => c.itemId === item.itemId && c.type === item.type)
       if (existing) {
         return {
           cart: state.cart.map((c) =>
-            c.menuItemId === item.menuItemId
+            c.itemId === item.itemId && c.type === item.type
               ? { ...c, quantity: c.quantity + item.quantity }
               : c,
           ),
@@ -74,13 +113,15 @@ export const useStore = create<AppState>((set) => ({
       }
       return { cart: [...state.cart, item] }
     }),
-  removeFromCart: (menuItemId) =>
-    set((state) => ({ cart: state.cart.filter((c) => c.menuItemId !== menuItemId) })),
+  removeFromCart: (itemId, type) =>
+    set((state) => ({ cart: state.cart.filter((c) => !(c.itemId === itemId && c.type === type)) })),
   clearCart: () => set({ cart: [] }),
   setVendorMenu: (vendorMenu) => set({ vendorMenu }),
+  setVendorServices: (vendorServices) => set({ vendorServices }),
   setOrders: (orders) => set({ orders }),
   logout: () => {
     localStorage.removeItem('token')
-    set({ user: null, token: null, cart: [], orders: [] })
+    localStorage.removeItem('user')
+    set({ user: null, cart: [], vendorMenu: [], vendorServices: [], orders: [] })
   },
 }))

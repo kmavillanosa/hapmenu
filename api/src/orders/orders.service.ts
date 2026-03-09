@@ -11,12 +11,18 @@ export class OrdersService {
   ) {}
 
   async create(data: Partial<Order>): Promise<Order> {
-    const order = this.ordersRepo.create(data);
+    const order = this.ordersRepo.create({
+      ...data,
+      items: data.items ?? [],
+    });
     return this.ordersRepo.save(order);
   }
 
   async findByVendor(vendorId: string): Promise<Order[]> {
-    return this.ordersRepo.find({ where: { vendorId }, order: { createdAt: 'DESC' } });
+    return this.ordersRepo.find({
+      where: { vendorId },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async findAll(): Promise<Order[]> {

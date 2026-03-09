@@ -1,5 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  CreateDateColumn,
+} from 'typeorm';
 import { MenuItem } from './menu-item.entity';
+import { ServiceItem } from '../services/service.entity';
 
 @Entity('vendors')
 export class Vendor {
@@ -18,8 +25,17 @@ export class Vendor {
   @Column({ nullable: true })
   contactInfo: string;
 
-  @OneToMany(() => MenuItem, (item) => item.vendor, { cascade: true, eager: true })
+  @OneToMany(() => MenuItem, (item) => item.vendor, {
+    cascade: true,
+    eager: true,
+  })
   menuItems: MenuItem[];
+
+  @OneToMany(() => ServiceItem, (item) => item.vendor, {
+    cascade: true,
+    eager: true,
+  })
+  services: ServiceItem[];
 
   @CreateDateColumn()
   createdAt: Date;

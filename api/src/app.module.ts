@@ -4,11 +4,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { VendorsModule } from './vendors/vendors.module';
+import { MenuItemsModule } from './menu-items/menu-items.module';
+import { ServicesModule } from './services/services.module';
 import { OrdersModule } from './orders/orders.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { User } from './users/user.entity';
 import { Vendor } from './vendors/vendor.entity';
 import { MenuItem } from './vendors/menu-item.entity';
+import { ServiceItem } from './services/service.entity';
 import { Order } from './orders/order.entity';
 
 @Module({
@@ -23,7 +26,7 @@ import { Order } from './orders/order.entity';
         username: configService.get('MYSQL_USER', 'root'),
         password: configService.get('MYSQL_PASSWORD', 'password'),
         database: configService.get('MYSQL_DB', 'hapmenu'),
-        entities: [User, Vendor, MenuItem, Order],
+        entities: [User, Vendor, MenuItem, ServiceItem, Order],
         synchronize: true,
       }),
       inject: [ConfigService],
@@ -31,6 +34,8 @@ import { Order } from './orders/order.entity';
     AuthModule,
     UsersModule,
     VendorsModule,
+    MenuItemsModule,
+    ServicesModule,
     OrdersModule,
     AnalyticsModule,
   ],
